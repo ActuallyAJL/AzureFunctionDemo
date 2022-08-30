@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using System.Net.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
@@ -19,41 +20,113 @@ namespace GitHubMonitorApp
         {
             log.LogInformation("Our GitHub Monitor processed an action.");
 
-            string name = req.Query["name"];
+            string bridgeUrl = "https://70.233.108.83:192.168.1.68/api";
+            string userName = "5fPdm9prinDhfD16nxuGKEc8bznxQuZFhY5tSYxb";
 
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
             var data = JsonConvert.DeserializeObject<Rootobject>(requestBody);
-            name = name ?? data?.pusher?.name;
 
             log.LogInformation(requestBody);
 
-            string responseMessage = string.IsNullOrEmpty(name)
-                ? "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response."
-                : $"Hello, {name}. This HTTP triggered function executed successfully.";
+            var alertState = "{\"on\":false, \"sat\":254, \"bri\":1,\"hue\":30000}";
 
-            return new OkResult();
+            
+
+            using (var client = new HttpClient()) {
+                var stringContent = new StringContent(alertState);
+                var response = await client.PostAsync($"{bridgeUrl}/{userName}/lights/7/state", stringContent);
+            }
+
+        string responseMessage = "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response.";
+
+        return new OkResult();
         }
 
     }
 }
 
 
+
 public class Rootobject
 {
-    public string _ref { get; set; }
-    public string before { get; set; }
-    public string after { get; set; }
-    public Repository repository { get; set; }
-    public Pusher pusher { get; set; }
-    public Sender sender { get; set; }
-    public bool created { get; set; }
-    public bool deleted { get; set; }
-    public bool forced { get; set; }
-    public object base_ref { get; set; }
-    public string compare { get; set; }
-    public Commit[] commits { get; set; }
-    public Head_Commit head_commit { get; set; }
+    public State state { get; set; }
+    public Swupdate swupdate { get; set; }
+    public string type { get; set; }
+    public string name { get; set; }
+    public string modelid { get; set; }
+    public string manufacturername { get; set; }
+    public string productname { get; set; }
+    public Capabilities capabilities { get; set; }
+    public Config config { get; set; }
+    public string uniqueid { get; set; }
+    public string swversion { get; set; }
+    public string swconfigid { get; set; }
+    public string productid { get; set; }
 }
+
+public class State
+{
+    public bool on { get; set; }
+    public int bri { get; set; }
+    public int hue { get; set; }
+    public int sat { get; set; }
+    public string effect { get; set; }
+    public float[] xy { get; set; }
+    public int ct { get; set; }
+    public string alert { get; set; }
+    public string colormode { get; set; }
+    public string mode { get; set; }
+    public bool reachable { get; set; }
+}
+
+public class Swupdate
+{
+    public string state { get; set; }
+    public DateTime lastinstall { get; set; }
+}
+
+public class Capabilities
+{
+    public bool certified { get; set; }
+    public Control control { get; set; }
+    public Streaming streaming { get; set; }
+}
+
+public class Control
+{
+    public int mindimlevel { get; set; }
+    public int maxlumen { get; set; }
+    public string colorgamuttype { get; set; }
+    public float[][] colorgamut { get; set; }
+    public Ct ct { get; set; }
+}
+
+public class Ct
+{
+    public int min { get; set; }
+    public int max { get; set; }
+}
+
+public class Streaming
+{
+    public bool renderer { get; set; }
+    public bool proxy { get; set; }
+}
+
+public class Config
+{
+    public string archetype { get; set; }
+    public string function { get; set; }
+    public string direction { get; set; }
+    public Startup startup { get; set; }
+}
+
+public class Startup
+{
+    public string mode { get; set; }
+    public bool configured { get; set; }
+}
+
 
 public class Repository
 {
